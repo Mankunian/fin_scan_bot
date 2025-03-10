@@ -1,15 +1,21 @@
 require("dotenv").config();
-const {Telegraf} = require("telegraf");
+const { Telegraf, Scenes, session } = require('telegraf');
 const axios = require("axios");
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 let userStates = {}; // Храним данные пользователя
 
-bot.start((ctx) => {
-    ctx.reply("Привет! Я помогу вам найти мебельную компанию. Чтобы оставить заявку, используйте команду /request");
+
+
+bot.command("start", (ctx) => {
+    const userId = ctx.from.id;
+    delete userStates[userId]; // Очистка состояния
+    ctx.reply("👋 Привет! Выберите команду:\n\n/register_company - Зарегистрировать компанию\n/request - Оставить заявку");
 });
 
+
+/*User request for order*/
 bot.command("request", (ctx) => {
     const userId = ctx.from.id;
     userStates[userId] = {step: "material", data: {}};
@@ -84,7 +90,78 @@ bot.on("message", async (ctx) => {
             break;
     }
 })
+/*User request for order*/
+
+
+/*Registration company*/
+bot.command("register_company", (ctx) => {
+    const userId = ctx.from.id;
+    userStates[userId] = { step: "name", data: {} };
+    ctx.reply("📛 Введите название вашей компании:");
+});
+
+bot.on("text", async (ctx) => {
+    const userId = ctx.from.id;
+    if (!userStates[userId]) return; // Если нет активного запроса — игнорируем
+
+    const userStep = userStates[userId].step;
+    const text = ctx.message.text.trim(); // Убираем пробелы
+
+    switch (userStep) {
+        case "name":
+            userStates[userId].data.name = text;
+            userStates[userId].step = "region";
+            ctx.reply("📍 Введите ваш регион работы:");
+            break;
+
+        case "region":
+            userStates[userId].data.region = text;
+            userStates[userId].step = "channel";
+            ctx.reply("🔗 Отправьте ID вашего канала (пример: `-1001234567890`):");
+            break;
+
+        case "channel":
+            if (!text.startsWith("-100")) {
+                ctx.reply("❌ Ошибка! Отправьте корректный ID канала.");
+                return;
+            }
+
+            userStates[userId].data.channel = text;
+
+            // Формируем объект компании
+            const companyData = {
+                userId: userId,
+                name: userStates[userId].data.name,
+                region: userStates[userId].data.region,
+                channel: text
+            };
+
+            // Отправляем данные в API
+            try {
+                await axios.post("http://localhost:5000/api/companies", companyData);
+                ctx.reply(`✅ Компания *${companyData.name}* зарегистрирована!`, { parse_mode: "Markdown" });
+            } catch (error) {
+                ctx.reply("❌ Ошибка при регистрации компании.");
+                console.error(error);
+            }
+
+            // Очищаем состояние пользователя
+            delete userStates[userId];
+            break;
+    }
+});
+
+
+
 
 bot.launch().then(() => console.log("🤖 Бот запущен и готов к работе!"));
+
+bot.telegram.setMyCommands([
+    { command: 'start', description: '🚀 Запустить бота' },
+    { command: 'leave_request', description: '📌 Оставить заявку на мебель' },
+    { command: 'register_company', description: '🏢 Зарегистрировать мебельную компанию' },
+    { command: 'my_company', description: 'ℹ️ Информация о вашей компании' },
+    { command: 'help', description: '❓ Список команд и инструкция' }
+]);
 
 module.exports = bot;
