@@ -5,13 +5,13 @@ const Request = require('../models/Request'); // Подключаем модел
 // POST /api/requests - создание заявки
 router.post('/', async (req, res) => {
     try {
-        const { userId, material, time, budget, room, photo } = req.body;
+        const { userId, material, time, budget, room, userChatId } = req.body;
 
-        if (!userId || !material || !time || !budget || !room || !photo) {
+        if (!userId || !material || !time || !budget || !room || !userChatId) {
             return res.status(400).json({ message: 'Все поля должны быть заполнены' });
         }
 
-        const newRequest = new Request({ userId, material, time, budget, room, photo });
+        const newRequest = new Request({ userId, material, time, budget, room });
         await newRequest.save();
         res.status(201).json(newRequest);
     } catch (err) {
