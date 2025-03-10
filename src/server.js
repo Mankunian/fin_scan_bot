@@ -14,5 +14,6 @@ mongoose.connect('mongodb://localhost:27017/furnitureBot', {
     .catch(err => console.error(err));
 
 app.use('/api/requests', require('./routes/request')); // Подключаем маршрут
+app.use('/api/companies', require('./routes/company')); // Подключаем маршрут
 
 app.listen(5000, () => console.log('Сервер запущен на порту 5000'));

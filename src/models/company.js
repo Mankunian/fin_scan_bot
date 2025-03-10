@@ -6,4 +6,4 @@ const CompanySchema = new mongoose.Schema({
     channel: String,
 });
 
-module.exports = mongoose.model('Request', CompanySchema);
+module.exports = mongoose.model('Company', CompanySchema);
