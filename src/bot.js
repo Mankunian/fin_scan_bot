@@ -72,7 +72,7 @@ bot.on("message", async (ctx) => {
 
             // Отправляем данные в API
             try {
-                await axios.post("http://localhost:3000/requests", requestData);
+                await axios.post("http://localhost:5000/api/requests", requestData);
                 ctx.reply("Заявка сохранена! Мы передадим ее мебельным компаниям.");
             } catch (error) {
                 ctx.reply("Ошибка при сохранении заявки.");
